@@ -1,0 +1,25 @@
+## Interface: 80100
+## Author: JANY
+## Version: 0.0.1
+## Title: 小本本记下来。
+## Title-zhCN: 小本本记下来。Little Ben, write it down.
+## Title-zhTW: 小本本记下来。Little Ben, write it down.
+## Notes: Little Ben, write it down.
+## Notes-zhCN: 小本本记下来。
+## Notes-zhTW: 小本本记下来。
+## DefaultState: enabled
+## SavedVariables: LittleBenDB
+
+
+
+# Library
+Libs\Load_Libs.xml
+
+# Localization
+Locales\Load_Locales.xml
+
+# Initialize
+Init.lua
+
+# Module
+Modules\Load_Modules.xml

@@ -1,0 +1,4 @@
+<Ui xmlns="http://www.blizzard.com/wow/ui/">
+	<Include file="BigFootRaidersDate.lua"/>
+	<Include file="demo.lua"/>
+</Ui>
