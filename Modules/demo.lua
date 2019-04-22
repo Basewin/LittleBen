@@ -8,6 +8,7 @@ local LOP = LibStub("LibObjectiveProgress-1.0")
 
 DB.defaults.profile.modules.demo = {
 	enable = false,
+  enableid = false,
 	    custom = {
 		enable = true,
 		spellMsg = "格式   名称：内容。",
@@ -43,19 +44,31 @@ C.ModulesOption.demo = {
 			inline = true,
 			args = {
 				enable = {
-					order = 1,
-					name = L["Enable"],
-					desc = L["Enables / disables the module"],
-					type = "toggle",
-					width = "full",
-					set = function(info,value)
-						EPC.db.enable = value
-						if EPC.db.enable then EPC:Enable() else EPC:Disable() end
-					end,
-					get = function(info) return EPC.db.enable end
-				},
+          order = 1,
+          name = L["Enable"],
+          desc = L["Enables / disables the module"],
+          type = "toggle",
+          width = "full",
+          set = function(info,value)
+            EPC.db.enable = value
+            if EPC.db.enable then EPC:Enable() else EPC:Disable() end
+          end,
+          get = function(info) return EPC.db.enable end
+        },
+        enableid = {
+          order = 2,
+          name = "显示ID",
+          desc = "是否显示ID",
+          type = "toggle",
+          width = "full",
+          set = function(info,value)
+            EPC.db.enableid = value
+            if EPC.db.enableid then EPC:Enable() else EPC:Disable() end
+          end,
+          get = function(info) return EPC.db.enableid end
+        },
 				default = {
-					order = 2,
+					order = 3,
 					name = L["Defaults"],
 					type = "execute",
 					func = function()
@@ -63,7 +76,7 @@ C.ModulesOption.demo = {
 					end
 				},
 				spell = {
-					order = 3,
+					order = 4,
 					type = "input",
 					name = "添加笔记",
 					desc = function() return "格式   名称：内容。" end,
@@ -147,18 +160,21 @@ local function addLine(tooltip, id, kind,guin)
     left = NORMAL_FONT_COLOR_CODE .. kind .. ":" .. FONT_COLOR_CODE_CLOSE
     right = HIGHLIGHT_FONT_COLOR_CODE .. id .. FONT_COLOR_CODE_CLOSE
   end
-  tooltip:AddDoubleLine(left, right)
-  if RLS[guin] then 
-  	tooltip:AddDoubleLine(RLS[guin])
-  else 
+  if EPC.db.enableid and kind~="ben" then 
+    tooltip:AddDoubleLine(left, right)
+  end--锁
 
+  if EPC.db.custom.Demo_List[guin] then
   	tooltip:AddDoubleLine(EPC.db.custom.Demo_List[guin]) 
+  elseif RLS[guin] then 
+    tooltip:AddDoubleLine(RLS[guin])
   end
   tooltip:Show()
 end
 
 local function addLineByKind(self, id, kind)
   if not kind or not id then return end
+
   if kind == "spell" or kind == "enchant" or kind == "trade" then
     addLine(self, id, kinds.spell)
   elseif kind == "talent" then
@@ -182,16 +198,22 @@ local function addLineByKind(self, id, kind)
   elseif kind == "visual" then
     addLine(self, id, kinds.visual)
   end
+
+  local spellname=GetSpellInfo(id)
+  addLine(self, id,"ben",spellname)
 end
 
 -- All kinds种类
-local function onSetHyperlink(self, link)
+local function onSetHyperlink(self, link)--关于设置超链接
   local kind, id = string.match(link,"^(%a+):(%d+)")
+
   addLineByKind(self, kind, id)
+  
 end
 
-hooksecurefunc(GameTooltip, "SetAction", function(self, slot)
+hooksecurefunc(GameTooltip, "SetAction", function(self, slot)--动作栏
   local kind, id = GetActionInfo(slot)
+ 
   addLineByKind(self, id, kind)
 end)
 
@@ -261,6 +283,7 @@ end)
 GameTooltip:HookScript("OnTooltipSetUnit", function(self)
   if C_PetBattles.IsInBattle() then return end
   local unit = select(2, self:GetUnit())
+
   if unit then
     local guid = UnitGUID(unit) or ""
     local guin = UnitName(unit) or ""
@@ -274,14 +297,17 @@ end)
 
 -- Items项目
 hooksecurefunc(GameTooltip, "SetToyByItemID", function(self, id)
+
   addLine(self, id, kinds.item)
 end)
 
 hooksecurefunc(GameTooltip, "SetRecipeReagentItem", function(self, id)
+
   addLine(self, id, kinds.item)
 end)
 
 local function attachItemTooltip(self)
+
   local link = select(2, self:GetItem())
   if not link then return end
 
@@ -445,7 +471,6 @@ end)
 -------------------------------------------------
 
 local function attachItemTooltip(self)
-	
   local link = select(2, self:GetItem())
   if not link then return end
 
@@ -500,6 +525,8 @@ local function attachItemTooltip(self)
     end
     if #bonuses ~= 0 then addLine(self, bonuses, kinds.bonus) end
     if #gems ~= 0 then addLine(self, gems, kinds.gem) end
+
+    addLine(self, id, "ben",GetItemInfo(id))
   end
 end
 -----------------------------
