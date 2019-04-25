@@ -6,7 +6,7 @@ if not L then return end
 L["Little Ben write it down"] = "小本本记下来"
 L["Author"] = "作者"
 L["Description"] = "简介"
-L["Little Ben is a World of Warcraft notebook. Write down what you want to write down at any time."] = "小本本是一个魔兽笔记本，随时记下你想要记下东西。"
+L["Little Ben is a World of Warcraft notebook. Write down what you want to write down at any time."] = "小本本是一个魔兽笔记本，随时记下你想要记下东西。\n|r聊天框输入|cFF00FF00/lb 内容 |cFFFFFFFF对选定目标进行记录。可快速记录。\n|r聊天框输入|cFF00FF00/lb list |cFFFFFFFF查数据列表！"
 L["Modules"] = "模块"
 L["Enable"] = "启用"
 L["Profiles"] = "配置文件"

@@ -3,28 +3,36 @@ local AddOnName, JAN = ...
 local RLS= JAN.Demo_List
 local L, B, C, DB= JAN.L, JAN.Base, JAN.Config, JAN.DataBase--L翻译，B基础，C配置，DB数据库,RLS一句话攻略
 
+local Addon = LibStub("AceAddon-3.0")
+local MeetingStone = Addon:GetAddon("MeetingStone")
+local DataBroker = MeetingStone:GetModule("DataBroker")
+local MainPanel = MeetingStone:GetModule("MainPanel")
+
 local EPC = JAN:NewModule("demo", "AceHook-3.0", "AceEvent-3.0")
 local LOP = LibStub("LibObjectiveProgress-1.0")
 
+local pairs = pairs
+
+
+
+
+
+
+
 DB.defaults.profile.modules.demo = {
-	enable = false,
+	enable = true,
   enableid = false,
 	    custom = {
 		enable = true,
-		spellMsg = "格式   名称：内容。",
+		spellMsg = "格式 名称--内容。",
 		Demo_List =  {
-			["阿塔达萨"] = {
+			["列表数据测试"] = {
 				{name = "沃卡尔", raiders = "3个图腾必须一起死，图腾死了再打Boss。"},
 				{name = "莱赞", raiders = "卡视角躲恐惧，被点名跑河道，别踩土堆。"},
 				{name = "女祭司阿伦扎", raiders = "秒ADD，Boss吸血前，血水一人一滩。"},
 				{name = "亚兹玛", raiders = "除坦克其他人出分身前集中。"},
 			},
-			["地渊孢林"] = {
-				{name = "长者莉娅克萨", raiders = "打断、Boss冲锋位置远离。"},
-				{name = "被感染的岩喉", raiders = "8秒内踩掉小虫子，躲喷吐和冲锋。"},
-				{name = "孢子召唤者赞查", raiders = "利用顺劈和点名清蘑菇，躲球。"},
-				{name = "不羁畸变怪", raiders = "集体移动，利用清理光圈消debuff，全力输出Boss，输出越高能量越快小怪出得越快Boss死得越快。"},
-			},
+
 			},
 		
 	},
@@ -72,20 +80,20 @@ C.ModulesOption.demo = {
 					name = L["Defaults"],
 					type = "execute",
 					func = function()
-						EPC.db.custom.spellMsg = "名称--内容"
+						EPC.db.custom.spellMsg = "名称~~内容"
 					end
 				},
 				spell = {
 					order = 4,
 					type = "input",
 					name = "添加笔记",
-					desc = function() return "格式   名称：内容。" end,
+					desc = function() return "格式   名称~~内容。" end,
 					width = 'full',
 					get = function(info) return EPC.db.custom.spellMsg end,
 					set = function(info, value) 
 		
-					EPC.db.custom.Demo_List[split(value,"--")[1]]=split(value,"--")[2];
-					print("成功保存"..EPC.db.custom.Demo_List[split(value,"--")[1]])
+					EPC.db.custom.Demo_List[split(value,"~~")[1]]=split(value,"~~")[2];
+					print("成功保存"..value)
 					EPC:SetNotificationText() 
 					end,
 				},
@@ -104,6 +112,8 @@ function split( str,reps )
     return resultStrList
 end
 
+
+LE_LFG_LIST_DISPLAY_TYPE_CLASS_ENUMERATE = 2
 
 local hooksecurefunc, select, UnitBuff, UnitDebuff, UnitAura, UnitGUID,
       GetGlyphSocketInfo, tonumber, strfind
@@ -172,6 +182,36 @@ local function addLine(tooltip, id, kind,guin)
   tooltip:Show()
 end
 
+hooksecurefunc(MainPanel, "OpenApplicantTooltip", function(self,applicant) 
+    if not IsAddOnLoaded("MeetingStone") then return end
+    local GameTooltip =  self.GameTooltip
+    local name = applicant:GetName()
+
+
+    if EPC.db.custom.Demo_List[name] then
+      GameTooltip:AddDoubleLine(EPC.db.custom.Demo_List[name]) 
+    elseif RLS[name] then 
+      GameTooltip:AddDoubleLine(RLS[name])
+    end
+  
+
+    GameTooltip:Show()
+  end) 
+hooksecurefunc(MainPanel,"OpenActivityTooltip", function(self,activity, tooltip)
+    if not IsAddOnLoaded("MeetingStone") then return end
+    local tooltip = self.GameTooltip
+    local name = activity:GetLeader()
+
+    if EPC.db.custom.Demo_List[name] then
+      tooltip:AddDoubleLine(EPC.db.custom.Demo_List[name]) 
+    elseif RLS[name] then 
+      tooltip:AddDoubleLine(RLS[name])
+    end
+  
+
+    tooltip:Show()
+  end)
+
 local function addLineByKind(self, id, kind)
   if not kind or not id then return end
 
@@ -210,6 +250,9 @@ local function onSetHyperlink(self, link)--关于设置超链接
   addLineByKind(self, kind, id)
   
 end
+
+
+
 
 hooksecurefunc(GameTooltip, "SetAction", function(self, slot)--动作栏
   local kind, id = GetActionInfo(slot)
@@ -306,64 +349,7 @@ hooksecurefunc(GameTooltip, "SetRecipeReagentItem", function(self, id)
   addLine(self, id, kinds.item)
 end)
 
-local function attachItemTooltip(self)
 
-  local link = select(2, self:GetItem())
-  if not link then return end
-
-  local itemString = string.match(link, "item:([%-?%d:]+)")
-  if not itemString then return end
-
-  local enchantid = ""
-  local bonusid = ""
-  local gemid = ""
-  local bonuses = {}
-  local itemSplit = {}
-
-  for v in string.gmatch(itemString, "(%d*:?)") do
-    if v == ":" then
-      itemSplit[#itemSplit + 1] = 0
-    else
-      itemSplit[#itemSplit + 1] = string.gsub(v, ":", "")
-    end
-  end
-
-  for index = 1, tonumber(itemSplit[13]) do
-    bonuses[#bonuses + 1] = itemSplit[13 + index]
-  end
-
-  local gems = {}
-  for i=1, 4 do
-    local _,gemLink = GetItemGem(link, i)
-    if gemLink then
-      local gemDetail = string.match(gemLink, "item[%-?%d:]+")
-      gems[#gems + 1] = string.match(gemDetail, "item:(%d+):")
-    elseif flags == 256 then
-      gems[#gems + 1] = "0"
-    end
-  end
-
-  local id = string.match(link, "item:(%d*)")
-  if (id == "" or id == "0") and TradeSkillFrame ~= nil and TradeSkillFrame:IsVisible() and GetMouseFocus().reagentIndex then
-    local selectedRecipe = TradeSkillFrame.RecipeList:GetSelectedRecipeID()
-    for i = 1, 8 do
-      if GetMouseFocus().reagentIndex == i then
-        id = C_TradeSkillUI.GetRecipeReagentItemLink(selectedRecipe, i):match("item:(%d*)") or nil
-        break
-      end
-    end
-  end
-
-  if id then
-    addLine(self, id, kinds.item)
-    if itemSplit[2] ~= 0 then
-      enchantid = itemSplit[2]
-      addLine(self, enchantid, kinds.enchant)
-    end
-    if #bonuses ~= 0 then addLine(self, bonuses, kinds.bonus) end
-    if #gems ~= 0 then addLine(self, gems, kinds.gem) end
-  end
-end
 
 -------------------------------------------------
 local f = CreateFrame("frame")
@@ -550,6 +536,32 @@ function EPC:SetNotificationText()
 	self.spellMsg = db.enable and db.spellMsg or "格式   名称：内容。"
 end
 
+SLASH_LittleBen1, SLASH_LittleBen1 = "/lb", "/LittleBen";
+SlashCmdList["LittleBen"] = function(msg, editBox)
+hendlerse(msg)
+    
+end
+function hendlerse(msg, ... )--命令行
+  msg=msg:lower()
+  local command, rest = msg:match("^(%S*)%s*(.-)$")
+  if command=="list" then
+        print("查看数据----------------------------")
+        for i,v in pairs(EPC.db.custom.Demo_List) do print(i,"--",v) end
+        print("查看数据----------------------------")
+  elseif command == msg and UnitName("target") then
+        EPC.db.custom.Demo_List[UnitName("target")]=msg;
+          print(UnitName("target").."--成功保存数据--"..msg)
+          EPC:SetNotificationText() 
+
+  elseif command=="unlock" then
+
+        print("解锁框体")
+  elseif command=="help" then
+    print("/sc 数字\n|r","/sc lock\n|r","/sc unlock")
+  else
+    print("没有目标")
+  end
+end
 
 
 

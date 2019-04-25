@@ -9,7 +9,7 @@
 ## Notes-zhTW: 小本本记下来。
 ## DefaultState: enabled
 ## SavedVariables: LittleBenDB
-
+## Dependencies: MeetingStone
 
 
 # Library
