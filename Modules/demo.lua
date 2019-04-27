@@ -13,7 +13,11 @@ local LOP = LibStub("LibObjectiveProgress-1.0")
 
 local pairs = pairs
 
-
+local Role = {
+    ["DAMAGER"] = "|TInterface\\addons\\LittleBen\\Icon\\dps:11|t",
+    ["HEALER"] = "|TInterface\\addons\\LittleBen\\Icon\\healer:11|t",
+    ["TANK"] = "|TInterface\\addons\\LittleBen\\Icon\\tank:11|t"
+}
 
 
 
@@ -22,7 +26,8 @@ local pairs = pairs
 DB.defaults.profile.modules.demo = {
 	enable = true,
   enableid = false,
-	    custom = {
+  enableteam = false,
+	 custom = {
 		enable = true,
 		spellMsg = "格式 名称--内容。",
 		Demo_List =  {
@@ -74,9 +79,21 @@ C.ModulesOption.demo = {
             if EPC.db.enableid then EPC:Enable() else EPC:Disable() end
           end,
           get = function(info) return EPC.db.enableid end
+        },        
+        enableteam = {
+          order = 3,
+          name = "备用开关",
+          desc = "备用开关",
+          type = "toggle",
+          width = "full",
+          set = function(info,value)
+            EPC.db.enableteam = value
+            if EPC.db.enableteam then EPC:Enable() else EPC:Disable() end
+          end,
+          get = function(info) return EPC.db.enableteam end
         },
 				default = {
-					order = 3,
+					order = 4,
 					name = L["Defaults"],
 					type = "execute",
 					func = function()
@@ -84,7 +101,7 @@ C.ModulesOption.demo = {
 					end
 				},
 				spell = {
-					order = 4,
+					order = 5,
 					type = "input",
 					name = "添加笔记",
 					desc = function() return "格式   名称~~内容。" end,
@@ -113,7 +130,11 @@ function split( str,reps )
 end
 
 
-LE_LFG_LIST_DISPLAY_TYPE_CLASS_ENUMERATE = 2
+--if LE_LFG_LIST_DISPLAY_TYPE_CLASS_ENUMERATE ==3 then LE_LFG_LIST_DISPLAY_TYPE_CLASS_ENUMERATE =2 end--代码参考Livven的https://bbs.nga.cn/read.php?tid=16939530
+
+    
+
+
 
 local hooksecurefunc, select, UnitBuff, UnitDebuff, UnitAura, UnitGUID,
       GetGlyphSocketInfo, tonumber, strfind
@@ -150,6 +171,8 @@ local function contains(table, element)
 end
 
 local function addLine(tooltip, id, kind,guin)
+
+
 	if not EPC.db.enable then return end--锁
   if not id or id == "" then return end
   if type(id) == "table" and #id == 1 then id = id[1] end
@@ -175,14 +198,39 @@ local function addLine(tooltip, id, kind,guin)
   end--锁
 
   if EPC.db.custom.Demo_List[guin] then
-  	tooltip:AddDoubleLine(EPC.db.custom.Demo_List[guin]) 
+    local str = EPC.db.custom.Demo_List[guin]-------------------------------------自动换行-----------------
+    local strlen = #str                                                         
+    local allstr = ""
+    local x = 1
+    local y = 21                                                                --21个字换
+    while(strlen > y*x)
+    do
+       allstr = allstr..SubStringUTF8(str,y*x-y+1,y*x).."\n"
+       x = x+1
+    end
+    allstr=allstr..SubStringUTF8(str,y*x-y+1,-1)-------------------------------------------------
+  	tooltip:AddDoubleLine("|cFF00FF00"..allstr) 
+
   elseif RLS[guin] then 
-    tooltip:AddDoubleLine(RLS[guin])
+    local strs = RLS[guin]
+    local strlens = #strs
+    local allstrs = ""
+    local xs = 1
+    local ys = 21
+    while(strlens > ys*xs)
+    do
+       allstrs = allstrs..SubStringUTF8(strs,ys*xs-ys+1,ys*xs).."\n"
+       xs = xs+1
+    end
+    allstrs=allstrs..SubStringUTF8(strs,ys*xs-ys+1,-1)
+    tooltip:AddDoubleLine("|cFF00FF00"..allstrs)
   end
   tooltip:Show()
 end
+---------------------------------------------------集合石勾子---------------------------------------------------------------------
 
 hooksecurefunc(MainPanel, "OpenApplicantTooltip", function(self,applicant) 
+
     if not IsAddOnLoaded("MeetingStone") then return end
     local GameTooltip =  self.GameTooltip
     local name = applicant:GetName()
@@ -191,27 +239,112 @@ hooksecurefunc(MainPanel, "OpenApplicantTooltip", function(self,applicant)
     if EPC.db.custom.Demo_List[name] then
       GameTooltip:AddDoubleLine(EPC.db.custom.Demo_List[name]) 
     elseif RLS[name] then 
-      GameTooltip:AddDoubleLine(RLS[name])
+      GameTooltip:AddDoubleLine("|cFF00FF00"..RLS[name])
     end
   
 
     GameTooltip:Show()
   end) 
+
 hooksecurefunc(MainPanel,"OpenActivityTooltip", function(self,activity, tooltip)
     if not IsAddOnLoaded("MeetingStone") then return end
     local tooltip = self.GameTooltip
-    local name = activity:GetLeader()
+    local names = activity:GetLeader()
+        --Added Style2 改 加-
+        tooltip:AddSepatator()
+        local roles = {}
+        local classInfo = {}
+        for i = 1, activity:GetNumMembers() do
+            local role, class, classLocalized = C_LFGList.GetSearchResultMemberInfo(activity:GetID(), i)
+            classInfo[class] = {
+                name = classLocalized,
+                color = RAID_CLASS_COLORS[class] or NORMAL_FONT_COLOR
+            }
+            if not roles[role] then roles[role] = {} end
+            if not roles[role][class] then roles[role][class] = 0 end
+            roles[role][class] = roles[role][class] + 1
+        end
+    
+        for role, classes in pairs(roles) do
+            tooltip:AddLine(Role[role].._G[role]..": ")
+            for class, count in pairs(classes) do
+                local text = "   "
+                if count > 1 then text = text .. count .. " " else text = text .. "   " end
+                text = text .. "|c" .. classInfo[class].color.colorStr ..  classInfo[class].name .. "|r "
+                tooltip:AddLine(text)
+            end
+        end
+        --Added Style2 End
 
-    if EPC.db.custom.Demo_List[name] then
-      tooltip:AddDoubleLine(EPC.db.custom.Demo_List[name]) 
-    elseif RLS[name] then 
-      tooltip:AddDoubleLine(RLS[name])
+    if EPC.db.custom.Demo_List[names] then
+      tooltip:AddDoubleLine(EPC.db.custom.Demo_List[names]) 
+    elseif RLS[names] then 
+      tooltip:AddDoubleLine("|cFF00FF00"..RLS[names])
     end
   
 
     tooltip:Show()
   end)
+----------------------------------------------------lua 同时 截取中文和英文字符串处理--------------------------------------------------------------------
+function SubStringUTF8(str, startIndex, endIndex)
+    if startIndex < 0 then
+        startIndex = SubStringGetTotalIndex(str) + startIndex + 1;
+    end
 
+    if endIndex ~= nil and endIndex < 0 then
+        endIndex = SubStringGetTotalIndex(str) + endIndex + 1;
+    end
+
+    if endIndex == nil then 
+        return string.sub(str, SubStringGetTrueIndex(str, startIndex));
+    else
+        return string.sub(str, SubStringGetTrueIndex(str, startIndex), SubStringGetTrueIndex(str, endIndex + 1) - 1);
+    end
+end
+
+--获取中英混合UTF8字符串的真实字符数量
+function SubStringGetTotalIndex(str)
+    local curIndex = 0;
+    local i = 1;
+    local lastCount = 1;
+    repeat 
+        lastCount = SubStringGetByteCount(str, i)
+        i = i + lastCount;
+        curIndex = curIndex + 1;
+    until(lastCount == 0);
+    return curIndex - 1;
+end
+
+function SubStringGetTrueIndex(str, index)
+    local curIndex = 0;
+    local i = 1;
+    local lastCount = 1;
+    repeat 
+        lastCount = SubStringGetByteCount(str, i)
+        i = i + lastCount;
+        curIndex = curIndex + 1;
+    until(curIndex >= index);
+    return i - lastCount;
+end
+
+--返回当前字符实际占用的字符数
+function SubStringGetByteCount(str, index)
+    local curByte = string.byte(str, index)
+    local byteCount = 1;
+    if curByte == nil then
+        byteCount = 0
+    elseif curByte > 0 and curByte <= 127 then
+        byteCount = 1
+    elseif curByte>=192 and curByte<=223 then
+        byteCount = 2
+    elseif curByte>=224 and curByte<=239 then
+        byteCount = 3
+    elseif curByte>=240 and curByte<=247 then
+        byteCount = 4
+    end
+    return byteCount;
+end
+------------------------------------------------------------------------------------------------------------------------
 local function addLineByKind(self, id, kind)
   if not kind or not id then return end
 

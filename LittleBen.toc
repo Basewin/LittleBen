@@ -1,12 +1,12 @@
 ## Interface: 80100
 ## Author: JANY
-## Version: 0.0.1
-## Title: 小本本记下来。
-## Title-zhCN: 小本本记下来。Little Ben, write it down.
-## Title-zhTW: 小本本记下来。Little Ben, write it down.
+## Version: 0.0.5
+## Title: Little Ben小本本记下来。
+## Title-zhCN: Little Ben |cff7fff7f-小本本记下来-|r write it down.
+## Title-zhTW: Little Ben |cff7fff7f-小本本记下来-|r write it down.
 ## Notes: Little Ben, write it down.
-## Notes-zhCN: 小本本记下来。
-## Notes-zhTW: 小本本记下来。
+## Notes-zhCN: Little Ben|cff7fff7f-小本本记下来-|r。
+## Notes-zhTW: Little Ben|cff7fff7f-小本本记下来-|r。
 ## DefaultState: enabled
 ## SavedVariables: LittleBenDB
 ## Dependencies: MeetingStone
